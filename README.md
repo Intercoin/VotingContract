@@ -22,16 +22,20 @@ once installed will be use methods:
 
 ## Methods
 
-#### wasEligible
-Checking if the user was eligible in last `voteWindowBlocks` blocks from  online Contest
+### wasEligible
+
+Checking if the user was eligible in last `voteWindowBlocks` blocks
+
 Params:
 name  | type | description
 --|--|--
 addr|address|user's address
 blockNumber|uint256|Block number
 
-#### vote
+### vote
+
 user can vote if he hasn't vote before and he has was eligible for last `voteWindowBlocks` blocks
+
 Params:
 name  | type | description
 --|--|--
