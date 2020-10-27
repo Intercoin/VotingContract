@@ -1,7 +1,7 @@
 const BN = require('bn.js'); // https://github.com/indutny/bn.js
 const util = require('util');
 
-const VotingContractMock = artifacts.require("VotingContract");
+const VotingContractMock = artifacts.require("VotingContractMock");
 const CommunityMock = artifacts.require("CommunityMock");
 const SomeExternalMock = artifacts.require("SomeExternalMock");
 
@@ -54,6 +54,9 @@ contract('VotingContract', (accounts) => {
         var SomeExternalMockInstance = await SomeExternalMock.new({from: accountTen});
         var counterBefore = await SomeExternalMockInstance.viewCounter({from: accountTen});
         
+        let signatureFunc =  await SomeExternalMockInstance.returnFuncSignature({from: accountTen});
+        
+
         CommunityMockInstance.setMemberCount(300000);
         
         let block1 = await web3.eth.getBlock("latest");
@@ -64,44 +67,48 @@ contract('VotingContract', (accounts) => {
             block1.number+10+200,// uint256 blockNumberEnd,
             10,// uint256 voteWindowBlocks,
             SomeExternalMockInstance.address, // address contractAddress,
-            'counter', // string memory methodName,
             CommunityMockInstance.address, // ICommunity communityAddress,
             'members', // string memory communityRole,
-            150000, // uint256 communityFraction,
+            1000, // uint256 communityFraction,
             1,// uint256 communityMinimum,
             {from: accountOne}
         );
         
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote({from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+1, signatureFunc, {from: accountOne}),
             "Voting is outside period "+(block1.number+10)+" - "+(block1.number+10+200)+" blocks"
         );
-        
-        for(i=0;i<10;i++) {
-            await helper.advanceBlock();    
-        }
-        
-        await truffleAssert.reverts(
-            VotingContractMockInstance.vote({from: accountOne}),
-            "Sender has not eligible yet"
-        );
-        
-        CommunityMockInstance.setMemberCount(15);
         
         for(i=0;i<20;i++) {
             await helper.advanceBlock();    
         }
-        await VotingContractMockInstance.vote({from: accountOne});
-        
         
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote({from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+19, signatureFunc, {from: accountOne}),
+            "Sender has not eligible yet"
+        );
+        
+        await CommunityMockInstance.setMemberCount(2);
+        await VotingContractMockInstance.setCommunityFraction(990000);
+        
+
+        for(i=0;i<10;i++) {
+            await helper.advanceBlock();
+        }
+        
+        let tmpblock = await web3.eth.getBlock("latest");
+
+        await VotingContractMockInstance.vote(tmpblock.number-1, signatureFunc,{from: accountOne});
+        
+        await truffleAssert.reverts(
+            VotingContractMockInstance.vote(block1.number+22, signatureFunc, {from: accountOne}),
             "Sender has already voted"
         );
         
         var counterAfter = await SomeExternalMockInstance.viewCounter({from: accountTen});
         
         assert.equal(counterAfter-counterBefore, 1,'counter doest not work');
+        
     });
     
 });

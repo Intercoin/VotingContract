@@ -6,10 +6,11 @@ import "./openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./openzeppelin-contracts/contracts/math/SafeMath.sol";
 import "./openzeppelin-contracts/contracts/utils/Address.sol";
+import "./openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import "./openzeppelin-contracts/contracts/access/Ownable.sol";
 import "./ICommunity.sol";
 
-contract VotingContract is Ownable {
+contract VotingContract is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
 
@@ -21,7 +22,6 @@ contract VotingContract is Ownable {
         uint256 endBlock;
         uint256 voteWindowBlocks;
         address contractAddress;
-        string methodName;
         ICommunity communityAddress;
         string communityRole;
         uint256 communityFraction;
@@ -29,6 +29,7 @@ contract VotingContract is Ownable {
     }
     
     mapping(address => bool) alreadyVoted;
+    mapping(address => uint256) lastEligibleBlock;
     Vote voteData;
     
     //event PollStarted();
@@ -50,8 +51,15 @@ contract VotingContract is Ownable {
         require(alreadyVoted[msg.sender] == false, "Sender has already voted");
         _;
     }
-    modifier eligible() {
-        require(wasEligible(msg.sender, block.number) == true, "Sender has not eligible yet");
+    modifier eligible(uint256 blockNumber) {
+        require(wasEligible(msg.sender, blockNumber) == true, "Sender has not eligible yet");
+        
+        require(
+            block.number.sub(blockNumber) <= voteData.voteWindowBlocks,
+            "Voting is outside `voteWindowBlocks`"
+        );
+            
+            
         _;
     }
     modifier isVotestant() {
@@ -73,7 +81,6 @@ contract VotingContract is Ownable {
      * @param blockNumberEnd vote will end at `blockNumberEnd`
      * @param voteWindowBlocks period in blocks then we check eligible
      * @param contractAddress contract's address which will call after user vote
-     * @param methodName method of contract's address which will call after user vote
      * @param communityAddress address community
      * @param communityRole community role of participants which allowance to vote
      * @param communityFraction fraction mul by 1e6. setup if minimum/memberCount too low
@@ -86,7 +93,6 @@ contract VotingContract is Ownable {
         uint256 blockNumberEnd,
         uint256 voteWindowBlocks,
         address contractAddress,
-        string memory methodName,
         ICommunity communityAddress,
         string memory communityRole,
         uint256 communityFraction,
@@ -99,7 +105,6 @@ contract VotingContract is Ownable {
         voteData.endBlock = blockNumberEnd;
         voteData.voteWindowBlocks = voteWindowBlocks;
         voteData.contractAddress = contractAddress;
-        voteData.methodName = methodName;
         voteData.communityAddress = communityAddress;
         voteData.communityRole = communityRole;
         voteData.communityFraction = communityFraction;
@@ -111,7 +116,7 @@ contract VotingContract is Ownable {
     */
    function wasEligible(
         address addr, 
-        uint256 blockNumber // user is eligle to vote from  blockNumber-voteWindowBlocks to blockNumber
+        uint256 blockNumber // user is eligle to vote from  blockNumber
     )
         public 
         view
@@ -123,24 +128,24 @@ contract VotingContract is Ownable {
         uint256 number;
         uint256 memberCount = ICommunity(voteData.communityAddress).memberCount(voteData.communityRole);
         
-        uint256 m = voteData.communityMinimum.mul(N).div(memberCount);
+        if (block.number.sub(blockNumber)>256) {
+            // hash of the given block - only works for 256 most recent blocks excluding current
+            // see https://solidity.readthedocs.io/en/v0.4.18/units-and-global-variables.html
         
-        if (m < voteData.communityFraction) {
-            m = voteData.communityFraction;
-        }
-
-        if (blockNumber < voteData.voteWindowBlocks) {
-            blocksLength = voteData.voteWindowBlocks;
         } else {
-            blocksLength = blockNumber.sub(voteData.voteWindowBlocks);
-        }
-        
-        for (uint256 i = blockNumber; i > blocksLength; i--) {
-            number = (uint256(keccak256(abi.encodePacked(i, addr))) % 900000).add(100000);
+            
+            uint256 m = voteData.communityMinimum.mul(N).div(memberCount);
+            
+            if (m < voteData.communityFraction) {
+                m = voteData.communityFraction;
+            }
+    
+            number = getNumber(blockNumber, 1000000);
             
             if (number < m) {
                 was = true;
             }
+        
         }
         return was;
     }
@@ -149,18 +154,30 @@ contract VotingContract is Ownable {
      * can vote
      */
     function vote(
+        uint256 blockNumber,
+        bytes memory functionSignature
+        
     )
         public 
         hasVoted()
         isVotestant()
         canVote()
-        eligible()
+        eligible(blockNumber)
+        nonReentrant()
     {
         emit PollEmit(msg.sender);
         alreadyVoted[msg.sender] = true;
         
         //_e.call(bytes4(sha3("setN(uint256)")), _n); // E's storage is set, D is not modified 
-        voteData.contractAddress.call(abi.encodePacked(bytes4(keccak256(abi.encodePacked(voteData.methodName,"()")))));
+        // voteData.contractAddress.call(abi.encodePacked(bytes4(keccak256(abi.encodePacked(voteData.methodName,"()")))));
+        voteData.contractAddress.call(functionSignature);
+        // see https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#examples
+        
+    }
+    
+    function getNumber(uint256 blockNumber, uint256 max) internal view returns(uint256 number) {
+        bytes32 blockHash = blockhash(blockNumber);
+        number = (uint256(keccak256(abi.encodePacked(blockHash, msg.sender))) % max);
     }
     
     /**

@@ -1,15 +1,13 @@
 pragma solidity >=0.6.0 <0.7.0;
-import "../openzeppelin-contracts/contracts/access/Ownable.sol";
+pragma experimental ABIEncoderV2;
+
 import "../VotingContract.sol";
 import "../ICommunity.sol";
 
-contract VotingContractFactory is Ownable {
+contract VotingContractMock is VotingContract {
+   
     
-    VotingContract[] public votingContractAddresses;
-
-    event VotingContractCreated(VotingContract votingContract);
-    
-     /**
+    /**
      * @param voteTitle vote title
      * @param blockNumberStart vote will start from `blockNumberStart`
      * @param blockNumberEnd vote will end at `blockNumberEnd`
@@ -20,7 +18,8 @@ contract VotingContractFactory is Ownable {
      * @param communityFraction fraction mul by 1e6. setup if minimum/memberCount too low
      * @param communityMinimum community minimum
      */
-    function createVotingContract (
+    constructor
+    (
         string memory voteTitle,
         uint256 blockNumberStart,
         uint256 blockNumberEnd,
@@ -30,23 +29,14 @@ contract VotingContractFactory is Ownable {
         string memory communityRole,
         uint256 communityFraction,
         uint256 communityMinimum
-    ) 
-        public
+    )
+        public 
+        VotingContract(voteTitle, blockNumberStart, blockNumberEnd, voteWindowBlocks, contractAddress, communityAddress, communityRole, communityFraction, communityMinimum)
     {
-        VotingContract votingContract = new VotingContract(
-            voteTitle,
-            blockNumberStart,
-            blockNumberEnd,
-            voteWindowBlocks,
-            contractAddress,
-            communityAddress,
-            communityRole,
-            communityFraction,
-            communityMinimum
-        );
-        votingContractAddresses.push(votingContract);
-        emit VotingContractCreated(votingContract);
-        votingContract.transferOwnership(_msgSender());  
+    }
+  
+    function setCommunityFraction(uint256 _communityFraction) public {
+        voteData.communityFraction = _communityFraction;
     }
     
 }
