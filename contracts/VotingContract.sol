@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/Address.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 
-import "./openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/ICommunity.sol";
+import "./IntercoinTrait.sol";
 
-import "./openzeppelin-contracts/contracts/math/SafeMath.sol";
-import "./openzeppelin-contracts/contracts/utils/Address.sol";
-import "./openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
-import "./openzeppelin-contracts/contracts/access/Ownable.sol";
-import "./ICommunity.sol";
-
-contract VotingContract is Ownable, ReentrancyGuard {
+contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe, IntercoinTrait {
     using SafeMath for uint256;
     using Address for address;
 
@@ -86,8 +87,7 @@ contract VotingContract is Ownable, ReentrancyGuard {
      * @param communityFraction fraction mul by 1e6. setup if minimum/memberCount too low
      * @param communityMinimum community minimum
      */
-    constructor
-    (
+    function init(
         string memory voteTitle,
         uint256 blockNumberStart,
         uint256 blockNumberEnd,
@@ -97,9 +97,13 @@ contract VotingContract is Ownable, ReentrancyGuard {
         string memory communityRole,
         uint256 communityFraction,
         uint256 communityMinimum
-    )
+    ) 
         public 
-    {
+        initializer
+    {    
+        __Ownable_init();
+        __ReentrancyGuard_init();
+	
         voteData.voteTitle = voteTitle;
         voteData.startBlock = blockNumberStart;
         voteData.endBlock = blockNumberEnd;
@@ -109,6 +113,8 @@ contract VotingContract is Ownable, ReentrancyGuard {
         voteData.communityRole = communityRole;
         voteData.communityFraction = communityFraction;
         voteData.communityMinimum = communityMinimum;
+        
+        
     }
    
    /**
@@ -167,6 +173,9 @@ contract VotingContract is Ownable, ReentrancyGuard {
     {
         emit PollEmit(msg.sender);
         alreadyVoted[msg.sender] = true;
+        
+        bool verify =  checkInstance(voteData.contractAddress);
+        require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
         
         //_e.call(bytes4(sha3("setN(uint256)")), _n); // E's storage is set, D is not modified 
         // voteData.contractAddress.call(abi.encodePacked(bytes4(keccak256(abi.encodePacked(voteData.methodName,"()")))));

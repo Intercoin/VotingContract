@@ -4,6 +4,8 @@ const util = require('util');
 const VotingContractMock = artifacts.require("VotingContractMock");
 const CommunityMock = artifacts.require("CommunityMock");
 const SomeExternalMock = artifacts.require("SomeExternalMock");
+const IntercoinMock = artifacts.require("IntercoinMock");
+
 
 
 const truffleAssert = require('truffle-assertions');
@@ -52,6 +54,9 @@ contract('VotingContract', (accounts) => {
         
         var CommunityMockInstance = await CommunityMock.new({from: accountTen});
         var SomeExternalMockInstance = await SomeExternalMock.new({from: accountTen});
+        var IntercoinMockInstance = await IntercoinMock.new({from: accountTen});
+        
+        
         var counterBefore = await SomeExternalMockInstance.viewCounter({from: accountTen});
         
         let signatureFunc =  await SomeExternalMockInstance.returnFuncSignature({from: accountTen});
@@ -61,7 +66,13 @@ contract('VotingContract', (accounts) => {
         
         let block1 = await web3.eth.getBlock("latest");
         
-        var VotingContractMockInstance = await VotingContractMock.new(
+        var VotingContractMockInstance = await VotingContractMock.new({from: accountOne});
+        
+        // reg imitation interaction with intercoin. usual it is happens in creation factory which will be clone instances
+        await VotingContractMockInstance.setIntercoinAddress(IntercoinMockInstance.address, {from: accountTen});
+        // --------------
+
+        await VotingContractMockInstance.init(
             'VoteTitle',// string memory voteTitle,
             block1.number+10, // uint256 blockNumberStart,
             block1.number+10+200,// uint256 blockNumberEnd,
@@ -73,6 +84,7 @@ contract('VotingContract', (accounts) => {
             1,// uint256 communityMinimum,
             {from: accountOne}
         );
+        
         
         await truffleAssert.reverts(
             VotingContractMockInstance.vote(block1.number+1, signatureFunc, {from: accountOne}),

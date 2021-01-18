@@ -1,8 +1,12 @@
 # VotingContract
 Smart contract for facilitating voting and polling
 
+# Installation
+### Node
+`npm install @openzeppelin/contracts-ethereum-package`
+
 # Deploy
-when deploy it is need to pass parameters in to constructor
+when deploy it is need to pass parameters in to init method
 Params:
 name  | type | description
 --|--|--
@@ -44,7 +48,7 @@ functionSignature|bytes| function signature (see https://solidity.readthedocs.io
 ## Lifecycle of Vote
 * deploy( or got) contract which method we will be call from voting contract. for example `<address contract1>` and method "counter" which increment internal variable
 * got contract of Community and roles name. for example `<address community>` and role "members"
-* creation VotingContract with params 
+* creation VotingContract and call init method with params 
    *   voteTitle = "My First Vote
    *   blockNumberStart = 11105165
    *   blockNumberEnd =  11155165
