@@ -119,7 +119,17 @@ contract('VotingContract', (accounts) => {
         
         var counterAfter = await SomeExternalMockInstance.viewCounter({from: accountTen});
         
-        assert.equal(counterAfter-counterBefore, 1,'counter doest not work');
+        assert.equal(counterAfter-counterBefore, 1,'counter does not work');
+        
+        
+        // check in votestant list
+        let list = await VotingContractMockInstance.getVotestantList({from: accountTwo});
+        assert.equal(list[0], accountOne,'votestant is not put at list');
+        
+        // check stored votestantInfo
+        let votestantData = await VotingContractMockInstance.getVotestantInfo(accountOne, {from: accountTwo});
+        assert.equal(votestantData.alreadyVoted, true,'vote is not set');
+        assert.equal(votestantData.functionSignature, signatureFunc,'signatureFunc is different');
         
     });
     

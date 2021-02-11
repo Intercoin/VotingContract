@@ -29,12 +29,17 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         uint256 communityMinimum;
     }
     
-    mapping(address => bool) alreadyVoted;
+    struct Votestant {
+        bytes functionSignature;
+        bool alreadyVoted;
+    }
+    mapping(address => Votestant) votestantInfo;
+    address[] votestantList;
     mapping(address => uint256) lastEligibleBlock;
     Vote voteData;
     
     //event PollStarted();
-    event PollEmit(address votestant);
+    event PollEmit(address votestant, bytes functionSignature);
     //event PollEnded();
     
     
@@ -49,7 +54,7 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     }
     
     modifier hasVoted() {
-        require(alreadyVoted[msg.sender] == false, "Sender has already voted");
+        require(votestantInfo[msg.sender].alreadyVoted == false, "Sender has already voted");
         _;
     }
     modifier eligible(uint256 blockNumber) {
@@ -157,7 +162,7 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     }
 
     /**
-     * can vote
+     * vote method
      */
     function vote(
         uint256 blockNumber,
@@ -171,8 +176,11 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         eligible(blockNumber)
         nonReentrant()
     {
-        emit PollEmit(msg.sender);
-        alreadyVoted[msg.sender] = true;
+        emit PollEmit(msg.sender, functionSignature);
+        
+        votestantInfo[msg.sender].functionSignature = functionSignature;
+        votestantInfo[msg.sender].alreadyVoted = true;
+        votestantList.push(msg.sender);
         
         bool verify =  checkInstance(voteData.contractAddress);
         require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
@@ -183,6 +191,23 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         // see https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#examples
         
     }
+    
+    /**
+     * get votestant votestant
+     * @param addr votestant's address
+     * @return Votestant tuple
+     */
+    function getVotestantInfo(address addr) public view returns(Votestant memory) {
+        return votestantInfo[addr];
+    }
+    
+    /**
+     * return all votestant's addresses
+     */
+    function getVotestantList() public view returns(address[] memory) {
+        return votestantList;
+    }
+    
     
     function getNumber(uint256 blockNumber, uint256 max) internal view returns(uint256 number) {
         bytes32 blockHash = blockhash(blockNumber);

@@ -22,6 +22,42 @@ communityMinimum|uint256|community minimum
 
 # Overview
 once installed will be use methods:
+<table>
+<thead>
+	<tr>
+		<th>method name</th>
+		<th>called by</th>
+		<th>description</th>
+	</tr>
+</thead>
+<tbody>
+    <tr>
+		<td><a href="#init">init</a></td>
+		<td>anyone</td>
+		<td>need to initialize after contract deploy</td>
+	</tr>
+	<tr>
+		<td><a href="#vote">vote</a></td>
+		<td>only which roles specified at Community Contract</td>
+		<td>vote method</td>
+	</tr>
+    <tr>
+		<td><a href="#waseligible">wasEligible</a></td>
+		<td>anyone</td>
+		<td>is block eligible for sender or not</td>
+	</tr>
+	<tr>
+		<td><a href="#getvotestantinfo">getVotestantInfo</a></td>
+		<td>anyone</td>
+		<td>return votestant info</td>
+	</tr>
+	<tr>
+		<td><a href="#getvotestantlist">getVotestantList</a></td>
+		<td>anyone</td>
+		<td>return votestant's address</td>
+	</tr>
+</tbody>
+</table>
 
 ## Methods
 
@@ -44,6 +80,17 @@ name  | type | description
 --|--|--
 blockNumber|uint256|Block number
 functionSignature|bytes| function signature (see https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#examples)
+
+### getVotestantInfo
+Return votestant info. tuple of (fucntionSignature;alreadyVoted)
+Params:
+name  | type | description
+--|--|--
+addr|address|user's address
+
+
+### getVotestantList
+return all address which already voted
 
 ## Lifecycle of Vote
 * deploy( or got) contract which method we will be call from voting contract. for example `<address contract1>` and method "counter" which increment internal variable
