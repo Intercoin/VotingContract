@@ -137,7 +137,7 @@ alreadyVoted|bool| true if voter is already voted
    *   voteWindowBlocks = 100
    *   contractAddress = `<address contract1>`
    *   communityAddress = `<address community>`
-   *   communitySettings = ['members',150000,20]  ([<communityRole>, <communityFraction>, <communityMinimum>])
+   *   communitySettings = ['members',150000,20]  ([`<communityRole>`, `<communityFraction>`, `<communityMinimum>`])
    
 * now any user which contain in contract community with role 'members' can vote in period from `blockNumberStart` to `blockNumberEnd` if was eligible in `blockNumber` block
 calling vote with Params
