@@ -6,8 +6,18 @@ import "../interfaces/ICommunity.sol";
 
 contract VotingContractMock is VotingContract {
    
-    function setCommunityFraction(uint256 _communityFraction) public {
-        voteData.communityFraction = _communityFraction;
+    function setCommunityFraction(string memory _communityRole, uint256 _communityFraction) public {
+        
+        for (uint256 i=0; i<voteData.communitySettings.length; i++) {
+            
+            if (
+                keccak256(abi.encodePacked(voteData.communitySettings[i].communityRole)) == 
+                keccak256(abi.encodePacked(_communityRole))
+            ) {
+                voteData.communitySettings[i].communityFraction  =_communityFraction;
+            }
+        }
+        
     }
     
 }

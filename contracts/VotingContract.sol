@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard
 import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 
 import "./interfaces/ICommunity.sol";
+import "./interfaces/IExternal.sol";
 import "./IntercoinTrait.sol";
 
 contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe, IntercoinTrait {
@@ -17,6 +18,19 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
 
     uint256 constant public N = 1e6;
     
+    /**
+     * send as array to external method instead two arrays with same length  [names[], values[]]
+     */
+    struct VoterData {
+        string name;
+        uint256 value;
+    }
+    
+    struct CommunitySettings {
+        string communityRole;
+        uint256 communityFraction;
+        uint256 communityMinimum;
+    }
     struct Vote {
         string voteTitle;
         uint256 startBlock;
@@ -24,22 +38,29 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         uint256 voteWindowBlocks;
         address contractAddress;
         ICommunity communityAddress;
-        string communityRole;
-        uint256 communityFraction;
-        uint256 communityMinimum;
+        CommunitySettings[] communitySettings;
+        mapping(bytes32 => uint256) communityRolesWeight;
     }
     
-    struct Votestant {
-        bytes functionSignature;
+    struct Voter {
+        address contractAddress;
+        VoterData[] voterData;
         bool alreadyVoted;
     }
-    mapping(address => Votestant) votestantInfo;
-    address[] votestantList;
+    mapping(address => Voter) votersMap;
+    
+    address[] voters;
+    
+    mapping(bytes32 => uint256) rolesWeight;
+    
     mapping(address => uint256) lastEligibleBlock;
     Vote voteData;
     
+    // temporary var used while send
+    IExternal.VoterData[] voterDataToSend;
+
     //event PollStarted();
-    event PollEmit(address votestant, bytes functionSignature);
+    event PollEmit(address voter, VoterData[] data, uint256 weight);
     //event PollEnded();
     
     
@@ -54,7 +75,7 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     }
     
     modifier hasVoted() {
-        require(votestantInfo[msg.sender].alreadyVoted == false, "Sender has already voted");
+        require(votersMap[msg.sender].alreadyVoted == false, "Sender has already voted");
         _;
     }
     modifier eligible(uint256 blockNumber) {
@@ -68,15 +89,21 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
             
         _;
     }
-    modifier isVotestant() {
+    modifier isVoters() {
         bool s = false;
         string[] memory roles = ICommunity(voteData.communityAddress).getRoles(msg.sender);
         for (uint256 i=0; i< roles.length; i++) {
-            
-            if (keccak256(abi.encodePacked(voteData.communityRole)) == keccak256(abi.encodePacked(roles[i]))) {
-                s = true;
+            for (uint256 j=0; j< voteData.communitySettings.length; j++) {
+                if (keccak256(abi.encodePacked(voteData.communitySettings[j].communityRole)) == keccak256(abi.encodePacked(roles[i]))) {
+                    s = true;
+                    break;
+                }
+            }
+            if (s==true)  {
+                break;
             }
         }
+        
         require(s == true, "Sender has not in Votestant List");
         _;
     }
@@ -88,9 +115,10 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      * @param voteWindowBlocks period in blocks then we check eligible
      * @param contractAddress contract's address which will call after user vote
      * @param communityAddress address community
-     * @param communityRole community role of participants which allowance to vote
-     * @param communityFraction fraction mul by 1e6. setup if minimum/memberCount too low
-     * @param communityMinimum community minimum
+     * @param communitySettings tuples of (communityRole,communityFraction,communityMinimum). where
+     *  communityRole community role which allowance to vote
+     *  communityFraction fraction mul by 1e6. setup if minimum/memberCount too low
+     *  communityMinimum community minimum
      */
     function init(
         string memory voteTitle,
@@ -99,9 +127,8 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         uint256 voteWindowBlocks,
         address contractAddress,
         ICommunity communityAddress,
-        string memory communityRole,
-        uint256 communityFraction,
-        uint256 communityMinimum
+        CommunitySettings[] memory communitySettings
+        
     ) 
         public 
         initializer
@@ -115,10 +142,29 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         voteData.voteWindowBlocks = voteWindowBlocks;
         voteData.contractAddress = contractAddress;
         voteData.communityAddress = communityAddress;
-        voteData.communityRole = communityRole;
-        voteData.communityFraction = communityFraction;
-        voteData.communityMinimum = communityMinimum;
         
+        // --------
+        // voteData.communitySettings = communitySettings;
+        // UnimplementedFeatureError: Copying of type struct VotingContract.CommunitySettings memory[] memory to storage not yet supported.
+        // -------- so do it in cycle below by pushing every tuple
+
+         for (uint256 i=0; i< communitySettings.length; i++) {
+            voteData.communityRolesWeight[keccak256(abi.encodePacked(communitySettings[i].communityRole))] = 1; // default weight
+            voteData.communitySettings.push(communitySettings[i]);
+        }
+        
+    }
+    
+    /**
+     * setup weight for role which is
+     */
+    function setWeight(
+        string memory role, 
+        uint256 weight
+    ) 
+        public 
+        onlyOwner 
+    {
         
     }
    
@@ -136,25 +182,33 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         
         bool was = false;
         uint256 blocksLength;
-        uint256 number;
-        uint256 memberCount = ICommunity(voteData.communityAddress).memberCount(voteData.communityRole);
+        
+        uint256 memberCount;
         
         if (block.number.sub(blockNumber)>256) {
             // hash of the given block - only works for 256 most recent blocks excluding current
             // see https://solidity.readthedocs.io/en/v0.4.18/units-and-global-variables.html
         
         } else {
+            uint256 m;
+            uint256 number  = getNumber(blockNumber, 1000000);
+            for (uint256 i=0; i<voteData.communitySettings.length; i++) {
+                
+                memberCount = ICommunity(voteData.communityAddress).memberCount(voteData.communitySettings[i].communityRole);
+                m = (voteData.communitySettings[i].communityMinimum).mul(N).div(memberCount);
             
-            uint256 m = voteData.communityMinimum.mul(N).div(memberCount);
-            
-            if (m < voteData.communityFraction) {
-                m = voteData.communityFraction;
-            }
+                if (m < voteData.communitySettings[i].communityFraction) {
+                    m = voteData.communitySettings[i].communityFraction;
+                }
     
-            number = getNumber(blockNumber, 1000000);
             
-            if (number < m) {
-                was = true;
+                if (number < m) {
+                    was = true;
+                }
+            
+                if (was == true) {
+                    break;
+                }
             }
         
         }
@@ -166,30 +220,44 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      */
     function vote(
         uint256 blockNumber,
-        bytes memory functionSignature
+        VoterData[] memory voterData
         
     )
         public 
         hasVoted()
-        isVotestant()
+        isVoters()
         canVote()
         eligible(blockNumber)
         nonReentrant()
     {
-        emit PollEmit(msg.sender, functionSignature);
         
-        votestantInfo[msg.sender].functionSignature = functionSignature;
-        votestantInfo[msg.sender].alreadyVoted = true;
-        votestantList.push(msg.sender);
+        
+        votersMap[msg.sender].contractAddress = voteData.contractAddress;
+       // votersMap[msg.sender].voterData = voterData;
+        
+        votersMap[msg.sender].alreadyVoted = true;
+        
+        voters.push(msg.sender);
         
         bool verify =  checkInstance(voteData.contractAddress);
         require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
         
-        //_e.call(bytes4(sha3("setN(uint256)")), _n); // E's storage is set, D is not modified 
-        // voteData.contractAddress.call(abi.encodePacked(bytes4(keccak256(abi.encodePacked(voteData.methodName,"()")))));
-        voteData.contractAddress.call(functionSignature);
-        // see https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#examples
+        uint256 weight = getWeight(msg.sender);
+      
+        // use temporary vars and put dataToSend into storage to avoid error "UnimplementedFeatureError"
+        delete voterDataToSend;
+        for (uint256 i=0; i<voterData.length; i++) {
+            
+            voterDataToSend.push(IExternal.VoterData(voterData[i].name,voterData[i].value));
+            votersMap[msg.sender].voterData.push(VoterData(voterData[i].name,voterData[i].value));
+        }
+
+         IExternal(voteData.contractAddress).vote(
+             voterDataToSend, 
+             weight
+         );
         
+        emit PollEmit(msg.sender, voterData,  weight);
     }
     
     /**
@@ -197,17 +265,40 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      * @param addr votestant's address
      * @return Votestant tuple
      */
-    function getVotestantInfo(address addr) public view returns(Votestant memory) {
-        return votestantInfo[addr];
+    function getVoterInfo(address addr) public view returns(Voter memory) {
+        return votersMap[addr];
     }
     
     /**
      * return all votestant's addresses
      */
-    function getVotestantList() public view returns(address[] memory) {
-        return votestantList;
+    function getVoters() public view returns(address[] memory) {
+        return voters;
     }
     
+    /**
+     * findout max weight for sender role
+     * @param addr sender's address
+     * @return weight max weight from all allowed roles
+     */
+    function getWeight(address addr) internal view returns(uint256 weight) {
+        uint256 iWeight = 0;
+        bytes32 iKeccakRole;
+        string[] memory roles = ICommunity(voteData.communityAddress).getRoles(addr);
+        for (uint256 i = 0; i < roles.length; i++) {
+            iKeccakRole = keccak256(abi.encodePacked(roles[i]));
+            for (uint256 j = 0; j < voteData.communitySettings.length; j++) {
+                if (keccak256(abi.encodePacked(voteData.communitySettings[j].communityRole)) == iKeccakRole) {
+                    iWeight = rolesWeight[iKeccakRole];
+                    if (weight < iWeight) {
+                        weight = iWeight;
+                    }
+                }
+            }
+        }
+    }
+    
+                
     
     function getNumber(uint256 blockNumber, uint256 max) internal view returns(uint256 number) {
         bytes32 blockHash = blockhash(blockNumber);

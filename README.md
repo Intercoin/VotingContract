@@ -16,9 +16,8 @@ blockNumberEnd|uint256|vote will end at `blockNumberEnd`
 voteWindowBlocks|uint256|period in blocks then we check eligible
 contractAddress|address|contract's address which will call after user vote
 communityAddress|address|address of community contract
-communityRole|string|community role of participants which allowance to vote
-communityFraction|uint256|fraction (percents mul by 1e6). setup if minimum/memberCount too low
-communityMinimum|uint256|community minimum
+communitySettings|tuple| see <a href="communitysettings">communitySettings</a>
+
 
 # Overview
 once installed will be use methods:
@@ -35,6 +34,11 @@ once installed will be use methods:
 		<td><a href="#init">init</a></td>
 		<td>anyone</td>
 		<td>need to initialize after contract deploy</td>
+	</tr>
+	<tr>
+		<td><a href="#setweight">setWeight</a></td>
+		<td>owner</td>
+		<td>ability to owner setup weight for role community</td>
 	</tr>
 	<tr>
 		<td><a href="#vote">vote</a></td>
@@ -79,7 +83,7 @@ Params:
 name  | type | description
 --|--|--
 blockNumber|uint256|Block number
-functionSignature|bytes| function signature (see https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#examples)
+voterData|array of tuples| see <a href="voterdata">voterData</a>
 
 ### getVotestantInfo
 Return votestant info. tuple of (fucntionSignature;alreadyVoted)
@@ -88,12 +92,36 @@ name  | type | description
 --|--|--
 addr|address|user's address
 
+### setWeight
+setup weight for community role
+Params:
+name  | type | description
+--|--|--
+role|string|role name
+weight|uint256|weight value
+
 
 ### getVotestantList
 return all address which already voted
 
+## Tuples
+### communitySettings
+name  | type | description
+--|--|--
+communityRole|string|community role of participants which allowance to vote
+communityFraction|uint256|fraction (percents mul by 1e6). setup if minimum/memberCount too low
+communityMinimum|uint256|community minimum
+
+### voterData
+name  | type | description
+--|--|--
+name|string| string
+value|uint256| uint256
+
+
+
 ## Lifecycle of Vote
-* deploy( or got) contract which method we will be call from voting contract. for example `<address contract1>` and method "counter" which increment internal variable
+* deploy( or got) contract which method `vote` we will be call from voting contract. for example `<address contract1>`
 * got contract of Community and roles name. for example `<address community>` and role "members"
 * creation VotingContract and call init method with params 
    *   voteTitle = "My First Vote
@@ -102,12 +130,11 @@ return all address which already voted
    *   voteWindowBlocks = 100
    *   contractAddress = `<address contract1>`
    *   communityAddress = `<address community>`
-   *   communityRole = 'members'
-   *   communityFraction = 150000
-   *   communityMinimum = 20
+   *   communitySettings = ['members',150000,20]  ([<communityRole>, <communityFraction>, <communityMinimum>])
+   
 * now any user which contain in contract community with role 'members' can vote in period from `blockNumberStart` to `blockNumberEnd` if was eligible in `blockNumber` block
 calling vote with Params
     * blockNumber = 11105222
-    * functionSignature = "0x61bc221a"  (it the same that `abi.encodePacked(bytes4(keccak256(abi.encodePacked('counter',"()"))))`)
+    * voterData = [["orange",12],["blackberry",34],["lemon",56]]
 
-* each successful vote will call method `counter` of `<address contract1>`
+* each successful vote will call method `vote` of `<address contract1>`

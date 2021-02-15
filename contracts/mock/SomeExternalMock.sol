@@ -1,10 +1,11 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
+import "../interfaces/IExternal.sol";
 
-contract SomeExternalMock {
+contract SomeExternalMock is IExternal {
     uint256 incrementCount;
     
-    function counter() public {
+    function counter() internal {
         incrementCount++;
     }
     
@@ -12,10 +13,10 @@ contract SomeExternalMock {
         return incrementCount;
     }
     
-    function returnFuncSignature() public view returns(string memory) {
-        //abi.encodePacked(bytes4(keccak256(abi.encodePacked('counter',"()"))));
-        return "0x61bc221a";
-    }
+    // function returnFuncSignature() public view returns(string memory) {
+    //     //abi.encodePacked(bytes4(keccak256(abi.encodePacked('counter',"()"))));
+    //     return "0x61bc221a";
+    // }
     
     function getNumber(address addr, uint256 blockNumber) public view returns(uint256 number) {
         bytes32 blockHash = blockhash(blockNumber);
@@ -27,5 +28,10 @@ contract SomeExternalMock {
         blockHash = blockhash(blockNumber);
         
         
+    }
+    
+    function vote(VoterData[] calldata voteData, uint256 weight) override external returns(bool success) {
+        counter();
+        return true;
     }
 }

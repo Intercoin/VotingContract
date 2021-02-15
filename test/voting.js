@@ -35,19 +35,16 @@ contract('VotingContract', (accounts) => {
     const accountTwelwe = accounts[11];
 
     // setup useful vars
-    var rolesTitle = 'OWNERS';
-    var roleStringADMINS = 'ADMINS';
     
-    var rolesTitle = new Map([
-      ['owners', 'owners'],
-      ['admins', 'admins'],
-      ['members', 'members'],
-      ['role1', 'Role#1'],
-      ['role2', 'Role#2'],
-      ['role3', 'Role#3'],
-      ['role4', 'Role#4'],
-      ['cc_admins', 'AdMiNs']
-    ]);
+    var votesData = [
+        ["lorem1", 11],
+        ["lorem2", 22],
+        ["lorem3", 33]
+    ];
+    var votesDataSecond = [
+        ["Ipsum1", 444],
+        ["Ipsum2", 555]
+    ];
     
     it('test voting contract ', async () => {
         
@@ -59,9 +56,6 @@ contract('VotingContract', (accounts) => {
         
         var counterBefore = await SomeExternalMockInstance.viewCounter({from: accountTen});
         
-        let signatureFunc =  await SomeExternalMockInstance.returnFuncSignature({from: accountTen});
-        
-
         CommunityMockInstance.setMemberCount(300000);
         
         let block1 = await web3.eth.getBlock("latest");
@@ -79,15 +73,14 @@ contract('VotingContract', (accounts) => {
             10,// uint256 voteWindowBlocks,
             SomeExternalMockInstance.address, // address contractAddress,
             CommunityMockInstance.address, // ICommunity communityAddress,
-            'members', // string memory communityRole,
-            1000, // uint256 communityFraction,
-            1,// uint256 communityMinimum,
+            // communityRole,communityFraction,communityMinimum
+            [['members',1000,1]],
             {from: accountOne}
         );
         
         
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote(block1.number+1, signatureFunc, {from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+1, votesData, {from: accountOne}),
             "Voting is outside period "+(block1.number+10)+" - "+(block1.number+10+200)+" blocks"
         );
         
@@ -96,12 +89,12 @@ contract('VotingContract', (accounts) => {
         }
         
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote(block1.number+19, signatureFunc, {from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+19, votesData, {from: accountOne}),
             "Sender has not eligible yet"
         );
         
         await CommunityMockInstance.setMemberCount(2);
-        await VotingContractMockInstance.setCommunityFraction(990000);
+        await VotingContractMockInstance.setCommunityFraction('members', 990000);
         
 
         for(i=0;i<10;i++) {
@@ -110,26 +103,32 @@ contract('VotingContract', (accounts) => {
         
         let tmpblock = await web3.eth.getBlock("latest");
 
-        await VotingContractMockInstance.vote(tmpblock.number-1, signatureFunc,{from: accountOne});
+
         
+        await VotingContractMockInstance.vote(tmpblock.number-1, votesData, {from: accountOne});
+        await VotingContractMockInstance.vote(tmpblock.number-2, votesDataSecond, {from: accountTwo});
+
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote(block1.number+22, signatureFunc, {from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+22, votesData, {from: accountOne}),
             "Sender has already voted"
         );
         
         var counterAfter = await SomeExternalMockInstance.viewCounter({from: accountTen});
         
-        assert.equal(counterAfter-counterBefore, 1,'counter does not work');
+        assert.equal(counterAfter-counterBefore, 2,'counter does not work');
         
         
         // check in votestant list
-        let list = await VotingContractMockInstance.getVotestantList({from: accountTwo});
+        let list = await VotingContractMockInstance.getVoters({from: accountTwo});
         assert.equal(list[0], accountOne,'votestant is not put at list');
         
         // check stored votestantInfo
-        let votestantData = await VotingContractMockInstance.getVotestantInfo(accountOne, {from: accountTwo});
+        let votestantData = await VotingContractMockInstance.getVoterInfo(accountOne, {from: accountTwo});
         assert.equal(votestantData.alreadyVoted, true,'vote is not set');
-        assert.equal(votestantData.functionSignature, signatureFunc,'signatureFunc is different');
+        
+        // check stored votestantInfoSecond
+        let votestantDataSecond = await VotingContractMockInstance.getVoterInfo(accountTwo, {from: accountTwo});
+        assert.equal(votestantDataSecond.alreadyVoted, true,'vote is not set');
         
     });
     
