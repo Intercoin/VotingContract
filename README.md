@@ -16,7 +16,7 @@ blockNumberEnd|uint256|vote will end at `blockNumberEnd`
 voteWindowBlocks|uint256|period in blocks then we check eligible
 contractAddress|address|contract's address which will call after user vote
 communityAddress|address|address of community contract
-communitySettings|tuple| see <a href="communitysettings">communitySettings</a>
+communitySettings|tuple| see <a href="#communitysettings">communitySettings</a>
 
 
 # Overview
@@ -83,10 +83,10 @@ Params:
 name  | type | description
 --|--|--
 blockNumber|uint256|Block number
-voterData|array of tuples| see <a href="voterdata">voterData</a>
+voterData|array of tuples| see <a href="#voterdata">voterData</a>
 
 ### getVotestantInfo
-Return votestant info. tuple of (fucntionSignature;alreadyVoted)
+Return votestant info. tuple of <a href="#voter">voter</a>
 Params:
 name  | type | description
 --|--|--
@@ -105,6 +105,7 @@ weight|uint256|weight value
 return all address which already voted
 
 ## Tuples
+
 ### communitySettings
 name  | type | description
 --|--|--
@@ -118,6 +119,12 @@ name  | type | description
 name|string| string
 value|uint256| uint256
 
+### voter
+name  | type | description
+--|--|--
+contractAddress|address| contractAddress
+voterData|tuple| see <a href="#voterdata">voterData</a>
+alreadyVoted|bool| true if voter is already voted
 
 
 ## Lifecycle of Vote
