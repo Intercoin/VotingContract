@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard
 import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 
 import "./interfaces/ICommunity.sol";
-import "./interfaces/IExternal.sol";
 import "./IntercoinTrait.sol";
 
 contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe, IntercoinTrait {
@@ -44,6 +43,7 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     
     struct Voter {
         address contractAddress;
+        string contractMethodName;
         VoterData[] voterData;
         bool alreadyVoted;
     }
@@ -56,11 +56,8 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     mapping(address => uint256) lastEligibleBlock;
     Vote voteData;
     
-    // temporary var used while send
-    IExternal.VoterData[] voterDataToSend;
-
     //event PollStarted();
-    event PollEmit(address voter, VoterData[] data, uint256 weight);
+    event PollEmit(address voter, string methodName, VoterData[] data, uint256 weight);
     //event PollEnded();
     
     
@@ -220,6 +217,7 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      */
     function vote(
         uint256 blockNumber,
+        string memory methodName,
         VoterData[] memory voterData
         
     )
@@ -231,11 +229,12 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         nonReentrant()
     {
         
-        
         votersMap[msg.sender].contractAddress = voteData.contractAddress;
-       // votersMap[msg.sender].voterData = voterData;
-        
+        votersMap[msg.sender].contractMethodName = methodName;
         votersMap[msg.sender].alreadyVoted = true;
+        for (uint256 i=0; i<voterData.length; i++) {
+            votersMap[msg.sender].voterData.push(VoterData(voterData[i].name,voterData[i].value));
+        }
         
         voters.push(msg.sender);
         
@@ -244,20 +243,20 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         
         uint256 weight = getWeight(msg.sender);
       
-        // use temporary vars and put dataToSend into storage to avoid error "UnimplementedFeatureError"
-        delete voterDataToSend;
-        for (uint256 i=0; i<voterData.length; i++) {
-            
-            voterDataToSend.push(IExternal.VoterData(voterData[i].name,voterData[i].value));
-            votersMap[msg.sender].voterData.push(VoterData(voterData[i].name,voterData[i].value));
-        }
-
-         IExternal(voteData.contractAddress).vote(
-             voterDataToSend, 
-             weight
-         );
         
-        emit PollEmit(msg.sender, voterData,  weight);
+        
+
+        //"vote((string,uint256)[],uint256)":
+        voteData.contractAddress.call(
+            abi.encodeWithSelector(
+                bytes4(keccak256(abi.encodePacked(methodName,"((string,uint256)[],uint256)"))),
+                //voterDataToSend, 
+                voterData, 
+                weight
+            )
+        );
+        
+        emit PollEmit(msg.sender, methodName, voterData,  weight);
     }
     
     /**
@@ -282,7 +281,8 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      * @return weight max weight from all allowed roles
      */
     function getWeight(address addr) internal view returns(uint256 weight) {
-        uint256 iWeight = 0;
+        weight = 1; // default minimum weight
+        uint256 iWeight = weight;
         bytes32 iKeccakRole;
         string[] memory roles = ICommunity(voteData.communityAddress).getRoles(addr);
         for (uint256 i = 0; i < roles.length; i++) {

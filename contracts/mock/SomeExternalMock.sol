@@ -31,7 +31,8 @@ contract SomeExternalMock is IExternal {
     }
     
     function vote(VoterData[] calldata voteData, uint256 weight) override external returns(bool success) {
-        counter();
+        //counter();
+        incrementCount = incrementCount + weight;
         return true;
     }
 }

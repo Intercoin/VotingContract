@@ -122,7 +122,8 @@ value|uint256| uint256
 ### voter
 name  | type | description
 --|--|--
-contractAddress|address| contractAddress
+contractAddress|address| contract address
+contractMethodName|string| contract method name
 voterData|tuple| see <a href="#voterdata">voterData</a>
 alreadyVoted|bool| true if voter is already voted
 
@@ -142,6 +143,7 @@ alreadyVoted|bool| true if voter is already voted
 * now any user which contain in contract community with role 'members' can vote in period from `blockNumberStart` to `blockNumberEnd` if was eligible in `blockNumber` block
 calling vote with Params
     * blockNumber = 11105222
+    * methodName = 'vote'
     * voterData = [["orange",12],["blackberry",34],["lemon",56]]
 
-* each successful vote will call method `vote` of `<address contract1>`
+* each successful vote will call method `vote(tuple(name,value)[], weight)` of `<address contract1>`. weight = 1 unless owner will set new value for role calling `setWeight`

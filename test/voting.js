@@ -46,6 +46,8 @@ contract('VotingContract', (accounts) => {
         ["Ipsum2", 555]
     ];
     
+    var methodNametoCall = 'vote';
+    
     it('test voting contract ', async () => {
         
         
@@ -80,7 +82,7 @@ contract('VotingContract', (accounts) => {
         
         
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote(block1.number+1, votesData, {from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+1, methodNametoCall, votesData, {from: accountOne}),
             "Voting is outside period "+(block1.number+10)+" - "+(block1.number+10+200)+" blocks"
         );
         
@@ -89,7 +91,7 @@ contract('VotingContract', (accounts) => {
         }
         
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote(block1.number+19, votesData, {from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+19, methodNametoCall, votesData, {from: accountOne}),
             "Sender has not eligible yet"
         );
         
@@ -105,11 +107,11 @@ contract('VotingContract', (accounts) => {
 
 
         
-        await VotingContractMockInstance.vote(tmpblock.number-1, votesData, {from: accountOne});
-        await VotingContractMockInstance.vote(tmpblock.number-2, votesDataSecond, {from: accountTwo});
+        await VotingContractMockInstance.vote(tmpblock.number-1, methodNametoCall, votesData, {from: accountOne});
+        await VotingContractMockInstance.vote(tmpblock.number-2, methodNametoCall, votesDataSecond, {from: accountTwo});
 
         await truffleAssert.reverts(
-            VotingContractMockInstance.vote(block1.number+22, votesData, {from: accountOne}),
+            VotingContractMockInstance.vote(block1.number+22, methodNametoCall, votesData, {from: accountOne}),
             "Sender has already voted"
         );
         
