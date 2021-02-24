@@ -1,3 +1,4 @@
+![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) `README.MD is out of date.`
 # VotingContract
 Smart contract for facilitating voting and polling
 
