@@ -67,9 +67,6 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, Inter
     event PollEmit(address voter, string methodName, VoterData[] data, uint256 weight);
     //event PollEnded();
     
-    
-    //addr.delegatecall(abi.encodePacked(bytes4(keccak256("setSomeNumber(uint256)")), amount));
-    
     modifier canVote() {
         require(
             (voteData.startBlock <= block.number) && (voteData.endBlock >= block.number), 
@@ -93,6 +90,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, Inter
             
         _;
     }
+    
     modifier isVoters() {
         bool s = false;
         string[] memory roles = ICommunity(voteData.communityAddress).getRoles(msg.sender);
@@ -113,7 +111,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, Inter
     }
     
     /**
-     * @param initSettings tuples of (voteTitle,blockNumberStart,blockNumberEnd,voteWindowBlocks). where
+     * @param initSettings tuple of (voteTitle,blockNumberStart,blockNumberEnd,voteWindowBlocks). where
      *  voteTitle vote title
      *  blockNumberStart vote will start from `blockNumberStart`
      *  blockNumberEnd vote will end at `blockNumberEnd`
@@ -126,10 +124,6 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, Inter
      *  communityMinimum community minimum
      */
     function init(
-        // string memory voteTitle,
-        // uint256 blockNumberStart,
-        // uint256 blockNumberEnd,
-        // uint256 voteWindowBlocks,
         InitSettings memory initSettings,
         address contractAddress,
         ICommunity communityAddress,
@@ -152,7 +146,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, Inter
         
         // --------
         // voteData.communitySettings = communitySettings;
-        // UnimplementedFeatureError: Copying of type struct VotingContract.CommunitySettings memory[] memory to storage not yet supported.
+        // UnimplementedFeatureError: Copying of type struct VotingContract.CommunitySettings memory[] from memory to storage not yet supported.
         // -------- so do it in cycle below by pushing every tuple
 
          for (uint256 i=0; i< communitySettings.length; i++) {

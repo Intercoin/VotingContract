@@ -11,14 +11,10 @@ when deploy it is need to pass parameters in to init method
 Params:
 name  | type | description
 --|--|--
-voteTitle|string|Vote title
-blockNumberStart|uint256|vote will start from `blockNumberStart`
-blockNumberEnd|uint256|vote will end at `blockNumberEnd`
-voteWindowBlocks|uint256|period in blocks then we check eligible
-contractAddress|address|contract's address which will call after user vote
+InitSettings|tuple| see <a href="#initsettings">InitSettings</a>
+contractAddress|address|contract's address which will call after user vote. contract nede to implement method with params: ((string,uint256)[],uint256). (tuples of tag:value, user weight)
 communityAddress|address|address of community contract
-communitySettings|tuple| see <a href="#communitysettings">communitySettings</a>
-
+communitySettings|tuple[]| see <a href="#communitysettings">CommunitySettings</a>
 
 # Overview
 once installed will be use methods:
@@ -39,7 +35,7 @@ once installed will be use methods:
 	<tr>
 		<td><a href="#setweight">setWeight</a></td>
 		<td>owner</td>
-		<td>ability to owner setup weight for role community</td>
+		<td>[TBD] ability to owner setup weight for role community</td>
 	</tr>
 	<tr>
 		<td><a href="#vote">vote</a></td>
@@ -52,14 +48,14 @@ once installed will be use methods:
 		<td>is block eligible for sender or not</td>
 	</tr>
 	<tr>
-		<td><a href="#getvotestantinfo">getVotestantInfo</a></td>
+		<td><a href="#getvoterinfo">getVoterInfo</a></td>
 		<td>anyone</td>
-		<td>return votestant info</td>
+		<td>return voter info</td>
 	</tr>
 	<tr>
-		<td><a href="#getvotestantlist">getVotestantList</a></td>
+		<td><a href="#getvoters">getVoters</a></td>
 		<td>anyone</td>
-		<td>return votestant's address</td>
+		<td>return voter's addresses</td>
 	</tr>
 </tbody>
 </table>
@@ -86,15 +82,15 @@ name  | type | description
 blockNumber|uint256|Block number
 voterData|array of tuples| see <a href="#voterdata">voterData</a>
 
-### getVotestantInfo
-Return votestant info. tuple of <a href="#voter">voter</a>
+### getVoterInfo
+Return voter info. tuple of <a href="#voter">voter</a>
 Params:
 name  | type | description
 --|--|--
 addr|address|user's address
 
 ### setWeight
-setup weight for community role
+[TBD] setup weight for community role
 Params:
 name  | type | description
 --|--|--
@@ -102,12 +98,20 @@ role|string|role name
 weight|uint256|weight value
 
 
-### getVotestantList
-return all address which already voted
+### getVoters
+return all addresses which already voted
 
 ## Tuples
 
-### communitySettings
+### InitSettings
+name  | type | description
+--|--|--
+voteTitle|string|Vote title
+blockNumberStart|uint256|vote will start from `blockNumberStart`
+blockNumberEnd|uint256|vote will end at `blockNumberEnd`
+voteWindowBlocks|uint256|period in blocks then we check eligible
+
+### CommunitySettings
 name  | type | description
 --|--|--
 communityRole|string|community role of participants which allowance to vote
@@ -133,13 +137,10 @@ alreadyVoted|bool| true if voter is already voted
 * deploy( or got) contract which method `vote` we will be call from voting contract. for example `<address contract1>`
 * got contract of Community and roles name. for example `<address community>` and role "members"
 * creation VotingContract and call init method with params 
-   *   voteTitle = "My First Vote
-   *   blockNumberStart = 11105165
-   *   blockNumberEnd =  11155165
-   *   voteWindowBlocks = 100
+   *   initSettings = ["My First Vote",11105165,11155165,100] ([`<voteTitle>`, `<blockNumberStart>`, `<blockNumberEnd>`, `<voteWindowBlocks>`])
    *   contractAddress = `<address contract1>`
    *   communityAddress = `<address community>`
-   *   communitySettings = ['members',150000,20]  ([`<communityRole>`, `<communityFraction>`, `<communityMinimum>`])
+   *   communitySettings = [['members',150000,20]]  ([`<communityRole>`, `<communityFraction>`, `<communityMinimum>`])
    
 * now any user which contain in contract community with role 'members' can vote in period from `blockNumberStart` to `blockNumberEnd` if was eligible in `blockNumber` block
 calling vote with Params
@@ -147,4 +148,4 @@ calling vote with Params
     * methodName = 'vote'
     * voterData = [["orange",12],["blackberry",34],["lemon",56]]
 
-* each successful vote will call method `vote(tuple(name,value)[], weight)` of `<address contract1>`. weight = 1 unless owner will set new value for role calling `setWeight`
+* each successful vote will call method `vote(tuple(name,value)[], weight)` of `<address contract1>`. [TBD] weight = 1 unless owner will set new value for role calling `setWeight`
