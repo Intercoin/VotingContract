@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/Address.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/ICommunity.sol";
 import "./IntercoinTrait.sol";
 
-contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe, IntercoinTrait {
-    using SafeMath for uint256;
-    using Address for address;
+contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IntercoinTrait {
+    using SafeMathUpgradeable for uint256;
+    using AddressUpgradeable for address;
 
     uint256 constant public N = 1e6;
     
@@ -46,6 +46,13 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         string contractMethodName;
         VoterData[] voterData;
         bool alreadyVoted;
+    }
+    
+    struct InitSettings {
+        string voteTitle;
+        uint256 blockNumberStart;
+        uint256 blockNumberEnd;
+        uint256 voteWindowBlocks;
     }
     mapping(address => Voter) votersMap;
     
@@ -106,10 +113,11 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     }
     
     /**
-     * @param voteTitle vote title
-     * @param blockNumberStart vote will start from `blockNumberStart`
-     * @param blockNumberEnd vote will end at `blockNumberEnd`
-     * @param voteWindowBlocks period in blocks then we check eligible
+     * @param initSettings tuples of (voteTitle,blockNumberStart,blockNumberEnd,voteWindowBlocks). where
+     *  voteTitle vote title
+     *  blockNumberStart vote will start from `blockNumberStart`
+     *  blockNumberEnd vote will end at `blockNumberEnd`
+     *  voteWindowBlocks period in blocks then we check eligible
      * @param contractAddress contract's address which will call after user vote
      * @param communityAddress address community
      * @param communitySettings tuples of (communityRole,communityFraction,communityMinimum). where
@@ -118,10 +126,11 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      *  communityMinimum community minimum
      */
     function init(
-        string memory voteTitle,
-        uint256 blockNumberStart,
-        uint256 blockNumberEnd,
-        uint256 voteWindowBlocks,
+        // string memory voteTitle,
+        // uint256 blockNumberStart,
+        // uint256 blockNumberEnd,
+        // uint256 voteWindowBlocks,
+        InitSettings memory initSettings,
         address contractAddress,
         ICommunity communityAddress,
         CommunitySettings[] memory communitySettings
@@ -133,10 +142,11 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         __Ownable_init();
         __ReentrancyGuard_init();
 	
-        voteData.voteTitle = voteTitle;
-        voteData.startBlock = blockNumberStart;
-        voteData.endBlock = blockNumberEnd;
-        voteData.voteWindowBlocks = voteWindowBlocks;
+        voteData.voteTitle = initSettings.voteTitle;
+        voteData.startBlock = initSettings.blockNumberStart;
+        voteData.endBlock = initSettings.blockNumberEnd;
+        voteData.voteWindowBlocks = initSettings.voteWindowBlocks;
+        
         voteData.contractAddress = contractAddress;
         voteData.communityAddress = communityAddress;
         
@@ -178,7 +188,7 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
     {
         
         bool was = false;
-        uint256 blocksLength;
+        //uint256 blocksLength;
         
         uint256 memberCount;
         
@@ -243,11 +253,8 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
         
         uint256 weight = getWeight(msg.sender);
       
-        
-        
-
         //"vote((string,uint256)[],uint256)":
-        voteData.contractAddress.call(
+        (bool success,) = voteData.contractAddress.call(
             abi.encodeWithSelector(
                 bytes4(keccak256(abi.encodePacked(methodName,"((string,uint256)[],uint256)"))),
                 //voterDataToSend, 
@@ -309,23 +316,27 @@ contract VotingContract is Initializable, OwnableUpgradeSafe, ReentrancyGuardUpg
      * convert uint to string
      */
     function uintToStr(uint _i) internal pure returns (string memory _uintAsString) {
-        uint number = _i;
-        if (number == 0) {
+        if (_i == 0) {
             return "0";
         }
-        uint j = number;
+        uint j = _i;
         uint len;
         while (j != 0) {
             len++;
             j /= 10;
         }
         bytes memory bstr = new bytes(len);
-        uint k = len - 1;
-        while (number != 0) {
-            bstr[k--] = byte(uint8(48 + number % 10));
-            number /= 10;
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
         }
         return string(bstr);
     }
+    
+    
     
 }

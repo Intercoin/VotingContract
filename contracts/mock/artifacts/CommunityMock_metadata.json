@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.6.12+commit.27d51765"
+		"version": "0.8.3+commit.8d00100c"
 	},
 	"language": "Solidity",
 	"output": {
@@ -95,7 +95,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"localhost/contracts/mock/CommunityMock.sol": "CommunityMock"
+			"contracts/mock/CommunityMock.sol": "CommunityMock"
 		},
 		"evmVersion": "istanbul",
 		"libraries": {},
@@ -103,24 +103,26 @@
 			"bytecodeHash": "ipfs"
 		},
 		"optimizer": {
-			"enabled": false,
+			"enabled": true,
 			"runs": 200
 		},
 		"remappings": []
 	},
 	"sources": {
-		"localhost/contracts/interfaces/ICommunity.sol": {
-			"keccak256": "0xfa20bc7a89721812f8531de07e2769ad43b637c9efe91c8b288b25fa4279990a",
+		"contracts/interfaces/ICommunity.sol": {
+			"keccak256": "0x776d3d2fdf1ffb532af308eb61a20fb8ef9bd6fdd203bb6bea0a9b44a0a8cd63",
+			"license": "MIT",
 			"urls": [
-				"bzz-raw://ec932b2c9fd6cbfb01e17eb2141ff04b3523069c7d83c45a17d5e636a3636d28",
-				"dweb:/ipfs/QmPyQAuZPojkJxiuXyb8c3zHfSdGaBorVu3LinaQMMYw5A"
+				"bzz-raw://3c72258a68852411f9339f1a17a2977e28d08e704dc653d89266bcd21852f08c",
+				"dweb:/ipfs/QmNSJ75gefsMUuyoPkxTFj6QbXLsXuCz4bkrnuXR2PYrti"
 			]
 		},
-		"localhost/contracts/mock/CommunityMock.sol": {
-			"keccak256": "0xa2fbbeb2d80de0ffe31057b0e900419bf4b3e6c57545b029989b86c3cd060e3e",
+		"contracts/mock/CommunityMock.sol": {
+			"keccak256": "0xc000376500b840964fb0f673c5cc1af1078cb0dc7412206d96470fa5c2f351f1",
+			"license": "MIT",
 			"urls": [
-				"bzz-raw://be9dc05575cfea9048a5a2ec2ea99a97a6392ee8a56b2a6424f4b92cdbeeaca3",
-				"dweb:/ipfs/QmaYHVhzRkgmWkBfeSQic9WAKVwYL2BaGnzJP8dbMruw9j"
+				"bzz-raw://76e3fb511b4b5aaac791c912cbe12e580ba07ba2cce21e0f615ef96f101f9c13",
+				"dweb:/ipfs/QmQ2STcK5kHVxeVjLcuqA869Yqkvpi9DDFYD2sXxVmsWhs"
 			]
 		}
 	},

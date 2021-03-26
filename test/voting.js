@@ -69,10 +69,12 @@ contract('VotingContract', (accounts) => {
         // --------------
 
         await VotingContractMockInstance.init(
-            'VoteTitle',// string memory voteTitle,
-            block1.number+10, // uint256 blockNumberStart,
-            block1.number+10+200,// uint256 blockNumberEnd,
-            10,// uint256 voteWindowBlocks,
+            [
+                'VoteTitle',// string memory voteTitle,
+                block1.number+10, // uint256 blockNumberStart,
+                block1.number+10+200,// uint256 blockNumberEnd,
+                10,// uint256 voteWindowBlocks,
+            ],
             SomeExternalMockInstance.address, // address contractAddress,
             CommunityMockInstance.address, // ICommunity communityAddress,
             // communityRole,communityFraction,communityMinimum
