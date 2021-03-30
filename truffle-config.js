@@ -77,6 +77,14 @@ module.exports = {
     // network_id: 2111,   // This network is yours, in the cloud.
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
+    mainnet: {
+        provider: () => new HDWalletProvider(process.env.private_key, 'https://mainnet.infura.io/v3/'+process.env.infura_project_id),
+        network_id: 1,       // Rinkeby's id
+        gas: 9000000,        
+        //confirmations: 2,    
+        timeoutBlocks: 200,  
+        skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
     rinkeby: {
         provider: () => new HDWalletProvider(process.env.private_key, 'https://rinkeby.infura.io/v3/'+process.env.infura_project_id),
         network_id: 4,       // Rinkeby's id
@@ -84,6 +92,20 @@ module.exports = {
         //confirmations: 2,    
         timeoutBlocks: 200,  
         skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
+    bsctest: {
+      provider: () => new HDWalletProvider(process.env.private_key, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+      network_id: 97,//0x61,
+      confirmations: 10,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
+    bscmain: {
+      provider: () => new HDWalletProvider(process.env.private_key, `https://bsc-dataseed.binance.org/`),
+      network_id: 56,//0x38,
+      confirmations: 10,
+      timeoutBlocks: 200,
+      skipDryRun: true
     },
   },
 
@@ -110,6 +132,7 @@ module.exports = {
   plugins: ['truffle-plugin-verify'],
   
   api_keys: {
-    etherscan: process.env.etherscan_api_key
+    etherscan: process.env.etherscan_api_key,
+    bscscan: process.env.bscscan_api_key
   },
 };
