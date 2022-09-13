@@ -9,9 +9,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/ICommunity.sol";
-import "./IntercoinTrait.sol";
 
-contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IntercoinTrait {
+contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeMathUpgradeable for uint256;
     using AddressUpgradeable for address;
 

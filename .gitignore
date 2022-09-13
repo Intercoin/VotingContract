@@ -2,4 +2,16 @@
 /node_modules
 artifacts
 .env
-.deps
+/cache
+coverage.json
+/coverage
+scripts/arguments.json
+/ipfs
+secret.*.json
+TODO.txt
+/metadata
+/.deps
+/.debugger
+remix-compiler.config.js
+.DS_Store
+/bin
