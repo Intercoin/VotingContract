@@ -241,8 +241,9 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         
         voters.push(msg.sender);
         
-        bool verify =  checkInstance(voteData.contractAddress);
-        require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
+        // TODO  0: REFACTORY THIC THING.   intergraction with trait dos not exists anymore
+        // bool verify =  checkInstance(voteData.contractAddress);
+        // require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
         
         uint256 weight = getWeight(msg.sender);
       
