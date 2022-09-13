@@ -9,9 +9,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/ICommunity.sol";
-import "./IntercoinTrait.sol";
 
-contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IntercoinTrait {
+contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeMathUpgradeable for uint256;
     using AddressUpgradeable for address;
 
@@ -242,8 +241,9 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, Inter
         
         voters.push(msg.sender);
         
-        bool verify =  checkInstance(voteData.contractAddress);
-        require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
+        // TODO  0: REFACTORY THIC THING.   intergraction with trait dos not exists anymore
+        // bool verify =  checkInstance(voteData.contractAddress);
+        // require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
         
         uint256 weight = getWeight(msg.sender);
       
