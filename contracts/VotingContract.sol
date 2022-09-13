@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -11,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "./interfaces/ICommunity.sol";
 
 contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
-    using SafeMathUpgradeable for uint256;
     using AddressUpgradeable for address;
 
     uint256 constant public N = 1e6;
@@ -82,7 +79,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(wasEligible(msg.sender, blockNumber) == true, "Sender has not eligible yet");
         
         require(
-            block.number.sub(blockNumber) <= voteData.voteWindowBlocks,
+            (block.number - blockNumber) <= voteData.voteWindowBlocks,
             "Voting is outside `voteWindowBlocks`"
         );
             
@@ -185,7 +182,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         
         uint256 memberCount;
         
-        if (block.number.sub(blockNumber)>256) {
+        if ((block.number - blockNumber)>256) {
             // hash of the given block - only works for 256 most recent blocks excluding current
             // see https://solidity.readthedocs.io/en/v0.4.18/units-and-global-variables.html
         
@@ -195,7 +192,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             for (uint256 i=0; i<voteData.communitySettings.length; i++) {
                 
                 memberCount = ICommunity(voteData.communityAddress).memberCount(voteData.communitySettings[i].communityRole);
-                m = (voteData.communitySettings[i].communityMinimum).mul(N).div(memberCount);
+                m = (voteData.communitySettings[i].communityMinimum) * (N) / (memberCount);
             
                 if (m < voteData.communitySettings[i].communityFraction) {
                     m = voteData.communitySettings[i].communityFraction;
