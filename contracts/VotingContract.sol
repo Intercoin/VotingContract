@@ -98,25 +98,38 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
     event PollEmit(address voter, string methodName, VoterData[] data, uint256 weight);
     //event PollEnded();
     
+    error VotingIsOutsideOfPeriod(uint256 startBlock, uint256 endBlock);
+    error AlreadyVoted(address sender);
+    error NotEligibleYet(address sender);
+    error VotingIsOutsideWindow(address sender, uint256 voteWindowBlocks);
+    error OutsideVotestantList(address sender);
+
+
     modifier canVote() {
-        require(
-            (voteData.startBlock <= block.number) && (voteData.endBlock >= block.number), 
-            string(abi.encodePacked("Voting is outside period ", uintToStr(voteData.startBlock), " - ", uintToStr(voteData.endBlock), " blocks"))
-        );
+        if ((voteData.startBlock <= block.number) && (voteData.endBlock >= block.number)) {
+            // can vote
+        } else {
+            revert VotingIsOutsideOfPeriod(voteData.startBlock, voteData.endBlock);
+        }
         _;
     }
     
     modifier hasVoted() {
-        require(votersMap[msg.sender].alreadyVoted == false, "Sender has already voted");
+        if (votersMap[msg.sender].alreadyVoted) {
+            revert AlreadyVoted(msg.sender);
+        }
         _;
     }
 
     modifier eligible(uint256 blockNumber) {
-        require(wasEligible(msg.sender, blockNumber) == true, "Sender has not eligible yet");
-        require(
-            (block.number - blockNumber) <= voteData.voteWindowBlocks,
-            "Voting is outside `voteWindowBlocks`"
-        );
+        if (wasEligible(msg.sender, blockNumber) == false) {
+            revert NotEligibleYet(msg.sender);
+        }
+        
+        if ((block.number - blockNumber) > voteData.voteWindowBlocks) {
+            revert VotingIsOutsideWindow(msg.sender, voteData.voteWindowBlocks);
+        }
+
         _;
     }
     
@@ -134,8 +147,8 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
                 break;
             }
         }
-        
-        require(s == true, "Sender has not in Votestant List");
+        if (s == false) {revert OutsideVotestantList(msg.sender); } 
+
         _;
     }
     
@@ -222,7 +235,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
     * check user eligible
     */
    function wasEligible(
-        address addr, 
+        address /*addr*/,
         uint256 blockNumber // user is eligle to vote from  blockNumber
     )
         public 
@@ -356,29 +369,5 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
         number = (uint256(keccak256(abi.encodePacked(blockHash, msg.sender))) % max);
     }
     
-    /**
-     * convert uint to string
-     */
-    function uintToStr(uint _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint k = len;
-        while (_i != 0) {
-            k = k-1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
-    }
     
 }
