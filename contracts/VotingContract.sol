@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "./interfaces/ICommunity.sol";
+import "@artman325/community/contracts/interfaces/ICommunity.sol";
 
 contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
-    using SafeMathUpgradeable for uint256;
     using AddressUpgradeable for address;
 
     uint256 constant public N = 1e6;
@@ -25,7 +22,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
     
     struct CommunitySettings {
-        string communityRole;
+        uint8 communityRole;
         uint256 communityFraction;
         uint256 communityMinimum;
     }
@@ -37,7 +34,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         address contractAddress;
         ICommunity communityAddress;
         CommunitySettings[] communitySettings;
-        mapping(bytes32 => uint256) communityRolesWeight;
+        mapping(uint8 => uint256) communityRolesWeight;
     }
     
     struct Voter {
@@ -53,15 +50,13 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 blockNumberEnd;
         uint256 voteWindowBlocks;
     }
-    mapping(address => Voter) votersMap;
-    
     address[] voters;
-    
-    mapping(bytes32 => uint256) rolesWeight;
-    
-    mapping(address => uint256) lastEligibleBlock;
     Vote voteData;
-    
+
+    mapping(address => Voter) votersMap;
+    mapping(uint8 => uint256) rolesWeight;
+    mapping(address => uint256) lastEligibleBlock;
+
     //event PollStarted();
     event PollEmit(address voter, string methodName, VoterData[] data, uint256 weight);
     //event PollEnded();
@@ -78,24 +73,22 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(votersMap[msg.sender].alreadyVoted == false, "Sender has already voted");
         _;
     }
+
     modifier eligible(uint256 blockNumber) {
         require(wasEligible(msg.sender, blockNumber) == true, "Sender has not eligible yet");
-        
         require(
-            block.number.sub(blockNumber) <= voteData.voteWindowBlocks,
+            (block.number - blockNumber) <= voteData.voteWindowBlocks,
             "Voting is outside `voteWindowBlocks`"
         );
-            
-            
         _;
     }
     
     modifier isVoters() {
         bool s = false;
-        string[] memory roles = ICommunity(voteData.communityAddress).getRoles(msg.sender);
+        uint8[] memory roles = ICommunity(voteData.communityAddress).getRoles(msg.sender);
         for (uint256 i=0; i< roles.length; i++) {
             for (uint256 j=0; j< voteData.communitySettings.length; j++) {
-                if (keccak256(abi.encodePacked(voteData.communitySettings[j].communityRole)) == keccak256(abi.encodePacked(roles[i]))) {
+                if (voteData.communitySettings[j].communityRole == roles[i]) {
                     s = true;
                     break;
                 }
@@ -148,8 +141,8 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         // UnimplementedFeatureError: Copying of type struct VotingContract.CommunitySettings memory[] from memory to storage not yet supported.
         // -------- so do it in cycle below by pushing every tuple
 
-         for (uint256 i=0; i< communitySettings.length; i++) {
-            voteData.communityRolesWeight[keccak256(abi.encodePacked(communitySettings[i].communityRole))] = 1; // default weight
+        for (uint256 i=0; i< communitySettings.length; i++) {
+            voteData.communityRolesWeight[communitySettings[i].communityRole] = 1; // default weight
             voteData.communitySettings.push(communitySettings[i]);
         }
         
@@ -179,13 +172,12 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         view
         returns(bool)
     {
-        
         bool was = false;
         //uint256 blocksLength;
         
         uint256 memberCount;
         
-        if (block.number.sub(blockNumber)>256) {
+        if ((block.number - blockNumber)>256) {
             // hash of the given block - only works for 256 most recent blocks excluding current
             // see https://solidity.readthedocs.io/en/v0.4.18/units-and-global-variables.html
         
@@ -194,8 +186,8 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             uint256 number  = getNumber(blockNumber, 1000000);
             for (uint256 i=0; i<voteData.communitySettings.length; i++) {
                 
-                memberCount = ICommunity(voteData.communityAddress).memberCount(voteData.communitySettings[i].communityRole);
-                m = (voteData.communitySettings[i].communityMinimum).mul(N).div(memberCount);
+                memberCount = ICommunity(voteData.communityAddress).addressesCount(voteData.communitySettings[i].communityRole);
+                m = (voteData.communitySettings[i].communityMinimum) * (N) / (memberCount);
             
                 if (m < voteData.communitySettings[i].communityFraction) {
                     m = voteData.communitySettings[i].communityFraction;
@@ -222,7 +214,6 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 blockNumber,
         string memory methodName,
         VoterData[] memory voterData
-        
     )
         public 
         hasVoted()
@@ -284,13 +275,11 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function getWeight(address addr) internal view returns(uint256 weight) {
         weight = 1; // default minimum weight
         uint256 iWeight = weight;
-        bytes32 iKeccakRole;
-        string[] memory roles = ICommunity(voteData.communityAddress).getRoles(addr);
+        uint8[] memory roles = ICommunity(voteData.communityAddress).getRoles(addr);
         for (uint256 i = 0; i < roles.length; i++) {
-            iKeccakRole = keccak256(abi.encodePacked(roles[i]));
             for (uint256 j = 0; j < voteData.communitySettings.length; j++) {
-                if (keccak256(abi.encodePacked(voteData.communitySettings[j].communityRole)) == iKeccakRole) {
-                    iWeight = rolesWeight[iKeccakRole];
+                if (voteData.communitySettings[j].communityRole == roles[i]) {
+                    iWeight = rolesWeight[roles[i]];
                     if (weight < iWeight) {
                         weight = iWeight;
                     }
@@ -298,8 +287,6 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             }
         }
     }
-    
-                
     
     function getNumber(uint256 blockNumber, uint256 max) internal view returns(uint256 number) {
         bytes32 blockHash = blockhash(blockNumber);
