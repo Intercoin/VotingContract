@@ -45,6 +45,7 @@ interface IVotingContract {
         address contractAddress,
         address communityAddress,
         CommunitySettings[] memory communitySettings,
+        address releaseManager,
         address costManager,
         address producedBy
     ) external;

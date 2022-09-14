@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@artman325/community/contracts/interfaces/ICommunity.sol";
 import "@artman325/releasemanager/contracts/CostManagerHelper.sol";
+import "@artman325/releasemanager/contracts/interfaces/IReleaseManager.sol";
 import "./interfaces/IVotingContract.sol";
 
 /**
@@ -79,6 +80,7 @@ All disputes related to this agreement shall be governed by and interpreted in a
 contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVotingContract, CostManagerHelper {
     using AddressUpgradeable for address;
 
+    address internal _releaseManager;
     uint256 constant public N = 1e6;
 
     uint8 internal constant OPERATION_SHIFT_BITS = 240;  // 256 - 16
@@ -103,7 +105,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
     error NotEligibleYet(address sender);
     error VotingIsOutsideWindow(address sender, uint256 voteWindowBlocks);
     error OutsideVotestantList(address sender);
-
+    error ShouldBeRegisteredInReleaseManager(address contractAddress, address releaseManager);
 
     modifier canVote() {
         if ((voteData.startBlock <= block.number) && (voteData.endBlock >= block.number)) {
@@ -164,6 +166,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
      *  communityRole community role which allowance to vote
      *  communityFraction fraction mul by 1e6. setup if minimum/memberCount too low
      *  communityMinimum community minimum
+     * @param releaseManager releaseManager's address
      * @param costManager costManager's address
      * @param producedBy address who produced(msg.sender here will be a factory address)
      */
@@ -172,6 +175,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
         address contractAddress,
         address communityAddress,
         CommunitySettings[] memory communitySettings,
+        address releaseManager,
         address costManager,
         address producedBy
         
@@ -179,12 +183,19 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
         external 
         initializer
     {    
+        _releaseManager = releaseManager;
         __CostManagerHelper_init(msg.sender);
         _setCostManager(costManager);
 
         __Ownable_init();
         __ReentrancyGuard_init();
-	
+
+
+        bool verify = IReleaseManager(_releaseManager).checkInstance(contractAddress);
+        if (verify == false) {
+            revert ShouldBeRegisteredInReleaseManager(contractAddress, _releaseManager);
+        }
+        
         voteData.voteTitle = initSettings.voteTitle;
         voteData.startBlock = initSettings.blockNumberStart;
         voteData.endBlock = initSettings.blockNumberEnd;
@@ -301,10 +312,6 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
         }
         
         voters.push(msg.sender);
-        
-        // TODO  0: REFACTORY THIC THING.   intergraction with trait dos not exists anymore
-        // bool verify =  checkInstance(voteData.contractAddress);
-        // require (verify == true, '"contractAddress" did not pass verifying at Intercoin');
         
         uint256 weight = getWeight(msg.sender);
       

@@ -153,6 +153,7 @@ contract VotingFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
             contractAddress,
             communityAddress,
             communitySettings,
+            releaseManager,
             costManager, 
             msg.sender
         );
@@ -183,6 +184,7 @@ contract VotingFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
         internal
     {
         // used for transferownership and other things
+        Ownable(instance).transferOwnership(msg.sender);
 
         // register instance in release manager
         registerInstance(instance);
