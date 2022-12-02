@@ -57,5 +57,31 @@ contract CommunityMock is ICommunity {
         // return list;
         return new address[](0);
     }
+
+
+    function getRoles(address[] calldata members)public override view returns(uint8[][] memory list){
+
+ uint8[] memory list2 = new uint8[](5);
+        list2[0] = 1;
+        list2[1] = 2;
+        list2[2] = 3;
+        list2[3] = 4;
+        list2[4] = 5;
+
+        list = new uint8[][](members.length);
+
+        for(uint256 i = 0; i < members.length; i++) {
+            list[i] = list2;
+        }
+
+
+        return list;
+
+    }
+
+    function getAddresses(uint8[] memory/* rolesIndex*/) public override pure returns(address[][] memory){
+        address[][]memory list = new address[][](0);
+        return list;
+    }
     
 }

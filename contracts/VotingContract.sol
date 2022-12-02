@@ -137,10 +137,12 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
     
     modifier isVoters() {
         bool s = false;
-        uint8[] memory roles = ICommunity(voteData.communityAddress).getRoles(msg.sender);
-        for (uint256 i=0; i< roles.length; i++) {
+        address[] memory addrs = new address[](1);
+        addrs[0] = msg.sender;
+        uint8[][] memory roles = ICommunity(voteData.communityAddress).getRoles(addrs);
+        for (uint256 i=0; i< roles[0].length; i++) {
             for (uint256 j=0; j< voteData.communitySettings.length; j++) {
-                if (voteData.communitySettings[j].communityRole == roles[i]) {
+                if (voteData.communitySettings[j].communityRole == roles[0][i]) {
                     s = true;
                     break;
                 }
@@ -358,11 +360,14 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
     function getWeight(address addr) internal view returns(uint256 weight) {
         weight = 1; // default minimum weight
         uint256 iWeight = weight;
-        uint8[] memory roles = ICommunity(voteData.communityAddress).getRoles(addr);
-        for (uint256 i = 0; i < roles.length; i++) {
+
+        address[] memory addrs = new address[](1);
+        addrs[0] = addr;
+        uint8[][] memory roles = ICommunity(voteData.communityAddress).getRoles(addrs);
+        for (uint256 i = 0; i < roles[0].length; i++) {
             for (uint256 j = 0; j < voteData.communitySettings.length; j++) {
-                if (voteData.communitySettings[j].communityRole == roles[i]) {
-                    iWeight = rolesWeight[roles[i]];
+                if (voteData.communitySettings[j].communityRole == roles[0][i]) {
+                    iWeight = rolesWeight[roles[0][i]];
                     if (weight < iWeight) {
                         weight = iWeight;
                     }
