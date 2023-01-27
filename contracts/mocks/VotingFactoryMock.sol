@@ -5,9 +5,10 @@ contract VotingFactoryMock is VotingFactory {
     
     constructor(
         address implVotingContract,
-        address costManager
+        address costManager,
+        address releaseManager
     ) 
-        VotingFactory(implVotingContract,costManager)
+        VotingFactory(implVotingContract, costManager, releaseManager)
     {
 
     }

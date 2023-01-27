@@ -41,7 +41,7 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
-    "@artman325/releasemanager": "^1.1.0",
+    "@artman325/releasemanager": "^2.0.0",
     "@artman325/community": "^1.1.1"
   },
   "scripts": {

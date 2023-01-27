@@ -93,8 +93,10 @@ contract VotingFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
     */
     constructor(
         address implVotingContract,
-        address costManager
+        address costManager,
+        address releaseManager
     ) 
+        ReleaseManagerHelper(releaseManager)
         CostManagerFactoryHelper(costManager)
     {
         implementationVotingContract = implVotingContract;
@@ -153,7 +155,7 @@ contract VotingFactory  is CostManagerFactoryHelper, ReleaseManagerHelper{
             contractAddress,
             communityAddress,
             communitySettings,
-            releaseManager,
+            releaseManager(),
             costManager, 
             msg.sender
         );

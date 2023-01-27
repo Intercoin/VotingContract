@@ -59,7 +59,8 @@ async function main() {
 	// 	gasLimit: 10e6
 	// };
 
-	console.log("Account balance:", (await deployer.getBalance()).toString());
+    const deployerBalanceBefore = await deployer.getBalance();
+    console.log("Account balance:", (deployerBalanceBefore).toString());
 
 	const VotingContractF = await ethers.getContractFactory("VotingContract");
 
@@ -71,6 +72,9 @@ async function main() {
 	data_object.implementationVotingContract 	= implementationVotingContract.address;
     data_object.releaseManager                  = RELEASE_MANAGER;
 
+	const deployerBalanceAfter = await deployer.getBalance();
+	console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
+	console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 
 	//---
 	const ts_updated = Date.now();

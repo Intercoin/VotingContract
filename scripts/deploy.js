@@ -54,25 +54,29 @@ async function main() {
 	};
 	let _params = [
 		data_object.implementationVotingContract,
-		ZERO_ADDRESS //costmanager
+		ZERO_ADDRESS, //costmanager
+		data_object.releaseManager
 	]
 	let params = [
 		..._params,
 		options
 	]
 
-	console.log("Account balance:", (await deployer.getBalance()).toString());
+    const deployerBalanceBefore = await deployer.getBalance();
+    console.log("Account balance:", (deployerBalanceBefore).toString());
 	
 	const VotingFactoryF = await ethers.getContractFactory("VotingFactory");
 
 	this.factory = await VotingFactoryF.connect(deployer).deploy(...params);
 
-	await this.factory.connect(deployer).registerReleaseManager(data_object.releaseManager);
-
 	console.log("Factory deployed at:", this.factory.address);
 	console.log("with params:", [..._params]);
 
 	console.log("registered with release manager:", data_object.releaseManager);
+	
+	const deployerBalanceAfter = await deployer.getBalance();
+	console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
+	console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 }
 
 main()

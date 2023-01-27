@@ -78,7 +78,7 @@ describe("VotingContract", function () {
 
 
         let implVotingContract = await VotingContractF.deploy();
-        VotingFactory = await VotingFactoryF.deploy(implVotingContract.address, NO_COSTMANAGER);
+        VotingFactory = await VotingFactoryF.deploy(implVotingContract.address, NO_COSTMANAGER, releaseManager.address);
 
         // 
         const factoriesList = [VotingFactory.address];
@@ -89,7 +89,7 @@ describe("VotingContract", function () {
                 "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
             ]
         ]
-        await VotingFactory.connect(owner).registerReleaseManager(releaseManager.address);
+        
         await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
 
     });

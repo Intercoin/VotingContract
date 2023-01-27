@@ -326,6 +326,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
                 weight
             )
         );
+        // todo 0:  require(success) ??
         
         _accountForOperation(
             OPERATION_VOTE << OPERATION_SHIFT_BITS,
