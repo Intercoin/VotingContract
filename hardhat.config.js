@@ -20,7 +20,7 @@ const bscURL = 'https://bsc-dataseed.binance.org' //`https://eth-rinkeby.alchemy
 const bsctestURL = 'https://data-seed-prebsc-1-s1.binance.org:8545';
 const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
 const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`
-
+const mumbaiURL = 'https://matic-mumbai.chainstacklabs.com';
 
 module.exports = {
   networks: {
@@ -70,6 +70,13 @@ module.exports = {
       url: maticURL,
       chainId: 137,
       //gasPrice: "auto",
+      accounts: [process.env.private_key],
+      saveDeployments: true
+    },
+    mumbai: {
+      url: mumbaiURL,
+      chainId: 80001,
+      gasPrice: "auto",
       accounts: [process.env.private_key],
       saveDeployments: true
     },
