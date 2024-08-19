@@ -12,10 +12,6 @@ require("@nomiclabs/hardhat-etherscan")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 
-
-const kovanURL = `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KOVAN}`
-const goerliURL = `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_GOERLI}`
-const rinkebyURL = /*`https://rinkeby.infura.io/v3/${process.env.INFURA_ID_PROJECT}` */`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
 const bscURL = 'https://bsc-dataseed.binance.org' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
 const bsctestURL = 'https://data-seed-prebsc-1-s1.binance.org:8545';
 const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
@@ -26,32 +22,14 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
-      gasPrice: "auto",
+      //gasPrice: "auto",
+      
+      chainId: 137,
       forking: {
-        url: mainnetURL
+        url: maticURL
       }
     },
-    kovan: {
-      url: kovanURL,
-      chainId: 42,
-      gas: 12000000,
-      accounts: [process.env.private_key],
-      saveDeployments: true
-    },
-    goerli: {
-      url: goerliURL,
-      chainId: 5,
-      gasPrice: 1000,
-      accounts: [process.env.private_key],
-      saveDeployments: true
-    },
-    rinkeby: {
-      url: rinkebyURL,
-      chainId: 4,
-      gasPrice: "auto",
-      accounts: [process.env.private_key],
-      saveDeployments: true
-    },
+    
     bsc: {
       url: bscURL,
       chainId: 56,
@@ -76,14 +54,14 @@ module.exports = {
     mumbai: {
       url: mumbaiURL,
       chainId: 80001,
-      gasPrice: "auto",
+      //gasPrice: "auto",
       accounts: [process.env.private_key],
       saveDeployments: true
     },
     mainnet: {
       url: mainnetURL,
       chainId: 1,
-      gasPrice: 20000000000,
+      //gasPrice: 20000000000,
       accounts: [process.env.private_key],
       saveDeployments: true
     }

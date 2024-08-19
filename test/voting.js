@@ -149,13 +149,15 @@ describe("VotingContract", function () {
         rc = await tx.wait(); // 0ms, as tx is already confirmed
         event = rc.events.find(event => event.event === 'InstanceCreated');
         [instance, instancesCount] = event.args;
-        VotingContractMockInstance = await ethers.getContractAt("VotingContractMock",instance);
+        var VotingContractMockInstance = await ethers.getContractAt("VotingContractMock",instance);
 
         await expect (
             VotingContractMockInstance.connect(bob).setWeight(membersRoleId+1, 20)
         ).to.be.revertedWith("Ownable: caller is not the owner");
         await VotingContractMockInstance.connect(alice).setWeight(membersRoleId+1, 20);
-
+        
+        await CommunityMockInstance.setRoles(alice.address, [1,2,3,4,5]);
+        
         await expect(
             VotingContractMockInstance.connect(alice).vote(block1.number+1, methodNametoCall, votesData)
         ).to.be.revertedWith(`VotingIsOutsideOfPeriod(${(block1.number+10)}, ${(block1.number+10+200)})`);
@@ -172,7 +174,7 @@ describe("VotingContract", function () {
         
         await CommunityMockInstance.setMemberCount(2);
         await VotingContractMockInstance.setCommunityFraction(membersRoleId, 990000);
-        
+         
 
         for(i = 0; i < 10; i++) {
             await network.provider.send("evm_increaseTime", [3600])
@@ -182,8 +184,10 @@ describe("VotingContract", function () {
         let tmpblock = await hre.ethers.provider.getBlock("latest");
 
         await VotingContractMockInstance.connect(alice).vote(tmpblock.number-1, methodNametoCall, votesData);
+        
+        await CommunityMockInstance.setRoles(bob.address, [1,2,3,4,5]);
         await VotingContractMockInstance.connect(bob).vote(tmpblock.number-2, methodNametoCall, votesDataSecond);
-
+        
         await expect(
             VotingContractMockInstance.connect(alice).vote(block1.number+22, methodNametoCall, votesData),
         ).to.be.revertedWith(`AlreadyVoted("${alice.address}")`);

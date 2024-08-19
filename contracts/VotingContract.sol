@@ -5,9 +5,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@artman325/community/contracts/interfaces/ICommunity.sol";
-import "@artman325/releasemanager/contracts/CostManagerHelper.sol";
-import "@artman325/releasemanager/contracts/interfaces/IReleaseManager.sol";
+import "@intercoin/community/contracts/interfaces/ICommunity.sol";
+import "@intercoin/releasemanager/contracts/CostManagerHelper.sol";
+import "@intercoin/releasemanager/contracts/interfaces/IReleaseManager.sol";
 import "./interfaces/IVotingContract.sol";
 
 /**
@@ -186,8 +186,7 @@ contract VotingContract is OwnableUpgradeable, ReentrancyGuardUpgradeable, IVoti
         initializer
     {    
         _releaseManager = releaseManager;
-        __CostManagerHelper_init(msg.sender);
-        _setCostManager(costManager);
+        __CostManagerHelper_init(msg.sender, costManager);
 
         __Ownable_init();
         __ReentrancyGuard_init();
