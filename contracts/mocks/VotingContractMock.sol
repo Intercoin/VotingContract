@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "../VotingContract.sol";
 
-import "@artman325/community/contracts/interfaces/ICommunity.sol";
+import "@intercoin/community/contracts/interfaces/ICommunity.sol";
 
 contract VotingContractMock is VotingContract {
    
