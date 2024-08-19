@@ -1,6 +1,6 @@
 {
   "name": "@intercoin/voting",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Smart contract for facilitating voting and polling",
   "main": "truffle-config.js",
   "directories": {
